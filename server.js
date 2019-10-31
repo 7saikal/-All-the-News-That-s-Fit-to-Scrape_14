@@ -29,58 +29,52 @@ mongoose.connect("mongodb://localhost/scrapperhomework", { useNewUrlParser: true
 
 
 // Route for scraping the data
-app.get("/scrape", function(req, res) {
+app.get("/scrape", function (req, res) {
 
-  axios.get("http://www.nytimes.com").then(function(response){
+  axios.get("http://www.nytimes.com").then(function (response) {
     //initial cheerio on the page grabbed by axios 
     //boiler plate code
     var $ = cheerio.load(response.data)
     console.log("we are srapping")
-    
+
     //array to hold each article 
     var article = []
     //loop through the file we grabbed with axios using the cheerio
     //.each uses iterable item and element argument to grap everything contain with our assetWrapper
-    $(".assetWrapper").each(function(h, element){
-        var title= $(this).find("h2").text().trim();
-        var url = $(this).find("a").attr("href");
-        var sum = $(this).find("p").text().trim();
-        //build object to push to the database key names should match what is in the db
-        var dataObject = {
-            headline:title, 
-            url:url,
-            summary:sum
-        }
-        //pushing object of article into articles of array 
-article.push(dataObject);
+    $(".assetWrapper").each(function (h, element) {
+      var title = $(this).find("h2").text().trim();
+      var url = $(this).find("a").attr("href");
+      var sum = $(this).find("p").text().trim();
+      //build object to push to the database key names should match what is in the db
+      var dataObject = {
+        headline: title,
+        url: url,
+        summary: sum
+      }
+      //pushing object of article into articles of array 
+      article.push(dataObject);
     })
     console.log(article);
     db.Article.insertMany(article)
     res.redirect("/");
-})
-console.log("Done Scraping")
+  })
+  console.log("Done Scraping")
 });
 
-
-
-
-// // Route to see what library looks like WITH populating
-// app.get("/populated", function(req, res) {
-//   // Using our Library model, "find" every library in our db and populate them with any associated books
-//   db.Library.find({})
-//     // Specify that we want to populate the retrieved libraries with any associated books
-//     .populate("books")
-//     .then(function(dbLibrary) {
-//       // If any Libraries are found, send them to the client with any associated Books
-//       res.json(dbLibrary);
-//     })
-//     .catch(function(err) {
-//       // If an error occurs, send it back to the client
-//       res.json(err);
-//     });
-// });
+app.get("/articles", function (req, res) {
+  console.log("article routes");
+  db.Article.find({})
+    .populate("notes")
+    .then(function (dbArticles) {
+      res.json(dbArticles);
+    })
+    .catch(function (err) {
+      // If an error occurs, send it back to the client
+      res.json(err);
+    })
+})
 
 // Start the server
-app.listen(PORT, function() {
+app.listen(PORT, function () {
   console.log("App running on port " + PORT + "!");
 });
